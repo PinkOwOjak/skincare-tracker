@@ -9,27 +9,31 @@ permissions:
 concurrency:
   group: pages
   cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install deps
         run: npm ci
 
       - name: Build
         run: npm run build
 
-      - name: SPA fallback for GitHub Pages (copy index.html to 404.html)
+      # SPA fallback (optional but helpful)
+      - name: Copy index.html -> 404.html
         run: cp dist/index.html dist/404.html
+
+      # Configure GitHub Pages
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -43,6 +47,5 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - id: deployment
         uses: actions/deploy-pages@v4
