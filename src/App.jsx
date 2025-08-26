@@ -268,9 +268,9 @@ export default function SkincareOrganizerApp() {
                   className="mt-1 block w-full sm:w-48 rounded-lg border px-3 py-2 text-sm"
                 >
                   <option value="skincare">Skincare</option>
-                  <option value="makeup">Makeup</option>
-                  <option value="bodycare">Bodycare</option>
                   <option value="haircare">Haircare</option>
+                  <option value="bodycare">Bodycare</option>
+                  <option value="makeup">Makeup</option>
                   <option value="other">Other</option>
                 </select>
 
@@ -369,9 +369,11 @@ export default function SkincareOrganizerApp() {
             <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="px-3 py-2 rounded-lg border text-sm">
               <option value="all">All categories</option>
               <option value="skincare">Skincare</option>
-              <option value="makeup">Makeup</option>
-              <option value="bodycare">Bodycare</option>
               <option value="haircare">Haircare</option>
+              <option value="bodycare">Bodycare</option>
+              <option value="makeup">Makeup</option>
+              
+              
               <option value="other">Other</option>
             </select>
             <div className="text-xs sm:text-sm text-slate-500">Total: {products.length}</div>
