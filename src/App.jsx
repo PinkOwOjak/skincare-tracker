@@ -17,7 +17,6 @@ export default function App() {
     brandName: "",
     mainCategory: "skincare",
     subCategory: "skincare",
-    buyingDate: "",
     expiryDate: "",
     manufacturingDate: "",
     openingDate: "",
@@ -29,6 +28,8 @@ export default function App() {
 
   const [form, setForm] = useState(blank);
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const importInputRef = useRef(null);
 
   // ---------- Import/Export ----------
   function exportJSON() {
@@ -211,7 +212,6 @@ export default function App() {
       brandName: form.brandName.trim(),
       mainCategory: form.mainCategory,
       subCategory: form.mainCategory === "skincare" ? form.subCategory : "",
-      buyingDate: form.buyingDate || "",
       expiryDate: form.expiryDate || "",
       manufacturingDate: form.manufacturingDate || "",
       openingDate: form.openingDate || "",
@@ -236,7 +236,6 @@ export default function App() {
       brandName: p.brandName || "",
       mainCategory: p.mainCategory || "skincare",
       subCategory: p.subCategory || "skincare",
-      buyingDate: p.buyingDate || "",
       expiryDate: p.expiryDate || "",
       manufacturingDate: p.manufacturingDate || "",
       openingDate: p.openingDate || "",
@@ -294,49 +293,58 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-sky-50 p-3 sm:p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Skincare & Makeup Organizer</h1>
-            <p className="text-xs sm:text-sm text-slate-600">Track buying, expiry, opening, manufacturing, PAO, weight & price — images optional. Data saved locally.</p>
-          </div>
-
-          <div className="flex flex-wrap gap-2 items-center">
-            <button
-              onClick={() => { resetForm(); setShowForm((s) => !s); }}
-              className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-2xl shadow hover:brightness-95"
-            >
-              {showForm ? "Close" : "Add product"}
-            </button>
-
-            <div className="bg-white rounded-xl p-2 shadow flex flex-col sm:flex-row gap-2 items-center">
-              <label className="text-xs text-slate-500">Import</label>
-              <input type="file" accept="application/json" onChange={importJSON} className="text-xs sm:text-sm" />
-              <button onClick={exportJSON} className="px-2 sm:px-3 py-1 bg-slate-100 rounded">Export</button>
+        {/* Import/Export in corners - only show when form is not visible */}
+        {!showForm && (
+          <>
+            <div className="fixed top-4 left-4 z-10">
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json"
+                onChange={importJSON}
+                className="hidden"
+              />
+              <button 
+                onClick={() => importInputRef.current?.click()}
+                className="bg-white px-3 py-2 rounded-xl shadow text-sm border hover:bg-gray-50 text-gray-700"
+                title="Import from JSON"
+              >
+                Import
+              </button>
             </div>
-          </div>
-        </header>
+            
+            <div className="fixed top-4 right-4 z-10">
+              <button 
+                onClick={exportJSON} 
+                className="bg-white px-3 py-2 rounded-xl shadow text-sm border hover:bg-gray-50 text-gray-700"
+                title="Export to JSON"
+              >
+                Export
+              </button>
+            </div>
+          </>
+        )}
 
         {/* Form */}
         {showForm && (
           <form onSubmit={onAddOrUpdate} className="bg-white p-4 sm:p-6 rounded-2xl shadow mb-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700">Product name</label>
+                <label className="block text-sm font-medium text-slate-700">Brand name</label>
+                <input
+                  value={form.brandName}
+                  onChange={(e) => setForm({ ...form, brandName: e.target.value })}
+                  placeholder="e.g. The Ordinary"
+                  className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm"
+                />
+
+                <label className="block text-sm font-medium text-slate-700 mt-4">Product name</label>
                 <input
                   value={form.productName}
                   onChange={(e) => setForm({ ...form, productName: e.target.value })}
                   placeholder="e.g. Niacinamide 10% + Zinc 1%"
                   className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm"
                   required
-                />
-
-                <label className="block text-sm font-medium text-slate-700 mt-4">Brand name</label>
-                <input
-                  value={form.brandName}
-                  onChange={(e) => setForm({ ...form, brandName: e.target.value })}
-                  placeholder="e.g. The Ordinary"
-                  className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm"
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
@@ -368,11 +376,7 @@ export default function App() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-                  <div>
-                    <label className="text-sm">Buying date</label>
-                    <input type="date" value={form.buyingDate} onChange={(e) => setForm({ ...form, buyingDate: e.target.value })} className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm" />
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                   <div>
                     <label className="text-sm">Expiry date (label)</label>
                     <input type="date" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm" />
@@ -414,31 +418,59 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-center justify-center gap-3">
+              <div className="flex flex-col items-center justify-center gap-4">
                 {form.imageData && (
                   <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-xl bg-slate-50 border flex items-center justify-center overflow-hidden">
                     <img src={form.imageData} alt="preview" className="object-contain w-full h-full" />
                   </div>
                 )}
 
+                {/* Hidden file inputs */}
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={(e) => handleFile(e.target.files?.[0])}
-                  className="text-xs"
+                  className="hidden"
                 />
+                
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => handleFile(e.target.files?.[0])}
+                  className="hidden"
+                />
+
+                {/* Photo action buttons */}
+                <div className="flex flex-col gap-2 w-full">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-lg hover:brightness-95 flex items-center justify-center gap-2"
+                  >
+                    📷 Take Photo
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-lg hover:brightness-95 flex items-center justify-center gap-2"
+                  >
+                    🖼️ Choose from Gallery
+                  </button>
+                </div>
                 
                 {form.imageData && (
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, imageData: "" })}
-                    className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded border"
+                    className="text-sm px-3 py-2 bg-red-50 text-red-600 rounded-xl border border-red-200 hover:bg-red-100 transition-colors"
                   >
                     Remove Photo
                   </button>
                 )}
-                <div className="text-xs sm:text-sm text-slate-500">Tip: Add later via Edit if you skip a photo now.</div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-3 sm:px-4 py-2 rounded-2xl text-sm" type="submit">
@@ -454,7 +486,7 @@ export default function App() {
         )}
 
         {/* Toolbar */}
-        <section className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <section className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 mt-16">{/* Added top margin for fixed buttons */}
           <div className="flex flex-wrap gap-2 items-center w-full">
             <input placeholder="Search by name, brand, category" value={query} onChange={(e) => setQuery(e.target.value)} className="px-3 py-2 rounded-lg border flex-1 min-w-[160px] text-sm" />
 
@@ -542,7 +574,6 @@ export default function App() {
                           <div><span className="text-slate-500">Product:</span> {p.productName || "—"}</div>
                           {p.price && <div><span className="text-slate-500">Price:</span> {p.price}</div>}
                           <div><span className="text-slate-500">Category:</span> {p.mainCategory}{p.mainCategory==='skincare' && p.subCategory ? ` / ${p.subCategory}` : ""}</div>
-                          {p.buyingDate && <div><span className="text-slate-500">Buying date:</span> {formatDMY(p.buyingDate)}</div>}
                           {/* Show manufacturing date only if provided AND explicit expiry is not provided */}
                           {p.manufacturingDate && !p.expiryDate && (
                             <div><span className="text-slate-500">Manufactured:</span> {formatDMY(p.manufacturingDate)}</div>
@@ -566,17 +597,34 @@ export default function App() {
             );
           })}
         </div>
-
-        {/* Spacer for mobile FAB */}
         <div className="h-20 sm:h-0" />
-
-        {/* Footer */}
         <footer className="mt-8 text-center text-xs sm:text-sm text-slate-500">
           Tip: Your data lives in your browser (localStorage). Use <span className="font-medium">Export</span> to back up, and <span className="font-medium">Import</span> to restore.
         </footer>
 
-        {/* Mobile floating Add button */}
-        <button aria-label="Add product" onClick={() => { resetForm(); setShowForm(true); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="sm:hidden fixed bottom-4 right-4 rounded-full shadow-lg bg-gradient-to-r from-pink-500 to-rose-500 text-white w-14 h-14 text-2xl grid place-items-center">+</button>
+        {/* Dynamic floating button - Add or Back */}
+        <button 
+          aria-label={showForm ? "Go back" : "Add product"} 
+          onClick={() => {
+            if (showForm) {
+              // Go back to main page
+              resetForm();
+              setShowForm(false);
+            } else {
+              // Go to add product form
+              resetForm();
+              setShowForm(true);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }} 
+          className={`sm:hidden fixed bottom-4 right-4 rounded-full shadow-lg text-white w-14 h-14 text-2xl grid place-items-center transition-all duration-200 ${
+            showForm 
+              ? 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700' 
+              : 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600'
+          }`}
+        >
+          {showForm ? '←' : '+'}
+        </button>
       </div>
     </div>
   );
