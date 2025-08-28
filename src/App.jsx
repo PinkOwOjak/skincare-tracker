@@ -144,7 +144,11 @@ export default function App() {
     if (months > 0) result += `${months}m `;
     if (days > 0 || result === "") result += `${days}d`;
     
-    return isPast ? `${result.trim()} past` : `${result.trim()} left`;
+    // For past dates, show negative format (e.g., -12d instead of "12d past")
+    if (isPast) {
+      return `-${result.trim()}`;
+    }
+    return `${result.trim()} left`;
   }
 
   function computeEffectiveExpiry(p) {
@@ -272,6 +276,22 @@ export default function App() {
     return true;
   })
   .sort((a, b) => {
+    // Separate products with manufacturing date only (no expiry date) from others
+    const aHasManufactureOnly = a.manufacturingDate && !a.expiryDate && !a.openingDate;
+    const bHasManufactureOnly = b.manufacturingDate && !b.expiryDate && !b.openingDate;
+    
+    // If one has manufacture date only and other doesn't, put manufacture-only products at the end
+    if (aHasManufactureOnly && !bHasManufactureOnly) return 1;
+    if (!aHasManufactureOnly && bHasManufactureOnly) return -1;
+    
+    // If both have manufacturing date only, sort by manufacturing date (oldest first)
+    if (aHasManufactureOnly && bHasManufactureOnly) {
+      const aManufacture = new Date(a.manufacturingDate);
+      const bManufacture = new Date(b.manufacturingDate);
+      return aManufacture - bManufacture; // oldest first
+    }
+    
+    // For products with expiry dates, sort by effective expiry (soonest first)
     const ea = computeEffectiveExpiry(a);
     const eb = computeEffectiveExpiry(b);
     if (!ea && !eb) return 0;
@@ -293,10 +313,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-sky-50 p-3 sm:p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Import/Export in corners - only show when form is not visible */}
+                {/* Import/Export in corners - only show when form is not visible */}
         {!showForm && (
-          <>
-            <div className="fixed top-4 left-4 z-10">
+          <div className="flex justify-between items-start mb-6">
+            <div>
               <input
                 ref={importInputRef}
                 type="file"
@@ -306,23 +326,23 @@ export default function App() {
               />
               <button 
                 onClick={() => importInputRef.current?.click()}
-                className="bg-white px-3 py-2 rounded-xl shadow text-sm border hover:bg-gray-50 text-gray-700"
+                className="bg-green-600 px-3 py-2 rounded-xl shadow text-sm border border-green-700 hover:bg-green-700 text-white transition-colors duration-200"
                 title="Import from JSON"
               >
                 Import
               </button>
             </div>
             
-            <div className="fixed top-4 right-4 z-10">
+            <div>
               <button 
                 onClick={exportJSON} 
-                className="bg-white px-3 py-2 rounded-xl shadow text-sm border hover:bg-gray-50 text-gray-700"
+                className="bg-orange-600 px-3 py-2 rounded-xl shadow text-sm border border-orange-700 hover:bg-orange-700 text-white transition-colors duration-200"
                 title="Export to JSON"
               >
                 Export
               </button>
             </div>
-          </>
+          </div>
         )}
 
         {/* Form */}
@@ -486,7 +506,7 @@ export default function App() {
         )}
 
         {/* Toolbar */}
-        <section className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 mt-16">{/* Added top margin for fixed buttons */}
+        <section className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="flex flex-wrap gap-2 items-center w-full">
             <input placeholder="Search by name, brand, category" value={query} onChange={(e) => setQuery(e.target.value)} className="px-3 py-2 rounded-lg border flex-1 min-w-[160px] text-sm" />
 
@@ -548,7 +568,7 @@ export default function App() {
                     </div>
                     <div className="text-right text-[10px] sm:text-xs text-slate-500">
                       {p.weight && <div>Weight: {p.weight}</div>}
-                      <div>Added: {formatDMY(new Date(p.createdAt).toISOString().split('T')[0])}</div>
+                      {p.paoMonths && <div>PAO: {p.paoMonths}m</div>}
                     </div>
                   </div>
 
@@ -556,7 +576,7 @@ export default function App() {
                   <div className="mt-3 text-xs sm:text-sm text-slate-600">
                     <div>Opened: {p.openingDate ? formatDMY(p.openingDate) : "—"} {openedDays !== null && <span className="text-slate-400">({openedDays}d since)</span>}</div>
                     <div>Expiry: {p.expiryDate ? formatDMY(p.expiryDate) : (paoDate ? formatDMY(paoDate) : "—")} {(expiryTimeLeft || paoTimeLeft) && (
-                      <strong className={(expiryTimeLeft || paoTimeLeft)?.includes('past') ? "text-red-600 ml-1" : "text-emerald-600 ml-1"}>
+                      <strong className={(expiryTimeLeft || paoTimeLeft)?.startsWith('-') ? "text-red-600 ml-1" : "text-emerald-600 ml-1"}>
                         {expiryTimeLeft || paoTimeLeft}
                       </strong>
                     )}</div>
@@ -564,7 +584,11 @@ export default function App() {
 
                   {/* Dropdown details */}
                   <div className="mt-2">
-                    <button onClick={() => setExpanded((ex) => ({ ...ex, [p.id]: !ex[p.id] }))} className="text-xs rounded-lg border px-2 py-1">
+                    <button onClick={() => setExpanded((ex) => ({ ...ex, [p.id]: !ex[p.id] }))} className={`text-xs rounded-lg px-3 py-2 text-white font-medium transition-colors duration-200 ${
+                      expanded[p.id] 
+                        ? 'bg-purple-600 hover:bg-purple-700 border border-purple-700' 
+                        : 'bg-indigo-600 hover:bg-indigo-700 border border-indigo-700'
+                    }`}>
                       {expanded[p.id] ? "Hide details" : "Show details"}
                     </button>
                     {expanded[p.id] && (
